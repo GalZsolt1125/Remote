@@ -48,12 +48,6 @@ unsigned long lastMotionSend = 0;
 
 const unsigned long MOTION_INTERVAL = 50;
 
-float currentBodyHeight = -20.0f;
-
-const float MIN_HEIGHT = -100.0f;
-
-const float MAX_HEIGHT = 25.0f;
-
 bool isMoving = false;
 
 bool tft_output(
@@ -141,13 +135,16 @@ void updateRobotControl()
 
     if (fabs(raw_rot) > 0.01f) {
         if (y > MOVEMENT_DEADZONE) {
-            rot = -raw_rot * 10.0f;
+            rot =
+                -raw_rot * 10.0f;
         }
         else if (y < -MOVEMENT_DEADZONE) {
-            rot = raw_rot * 10.0f;
+            rot =
+                raw_rot * 10.0f;
         }
         else {
-            rot = raw_rot * 10.0f;
+            rot =
+                raw_rot * 10.0f;
         }
     }
 
@@ -183,18 +180,8 @@ void updateRobotControl()
         );
 
     if (fabs(heightInput) > 0.1f) {
-        currentBodyHeight +=
-            heightInput * 8.0f;
-
-        currentBodyHeight =
-            constrain(
-                currentBodyHeight,
-                MIN_HEIGHT,
-                MAX_HEIGHT
-            );
-
-        robotClient.setBodyHeight(
-            currentBodyHeight
+        menu.adjustBodyHeight(
+            heightInput * 8.0f
         );
     }
 }
@@ -430,7 +417,7 @@ void loop()
     if (!robotClient.connected()) {
         if (robotClient.connect()) {
             robotClient.setBodyHeight(
-                currentBodyHeight
+                menu.getBodyHeight()
             );
         }
     }

@@ -22,6 +22,12 @@ public:
 
     bool isActive() const;
 
+    float getBodyHeight() const;
+
+    void setBodyHeight(float height);
+
+    void adjustBodyHeight(float amount);
+
 private:
     enum class State
     {
@@ -66,6 +72,9 @@ private:
     static constexpr unsigned long INPUT_REPEAT_DELAY = 140;
     static constexpr unsigned long BUTTON_DEBOUNCE = 180;
 
+    static constexpr float MIN_BODY_HEIGHT = -100.0f;
+    static constexpr float MAX_BODY_HEIGHT = 25.0f;
+
     bool buttonPressed(
         uint8_t pin,
         bool& lastState
@@ -84,6 +93,8 @@ private:
     void drawMainMenu();
 
     void drawBodyHeightMenu();
+
+    void drawBodyHeightValue();
 
     void drawGaitMenu();
 

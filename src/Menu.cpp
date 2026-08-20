@@ -36,6 +36,36 @@ bool Menu::isActive() const
     return state != State::CAMERA;
 }
 
+float Menu::getBodyHeight() const
+{
+    return bodyHeight;
+}
+
+void Menu::setBodyHeight(float height)
+{
+    bodyHeight =
+        constrain(
+            height,
+            MIN_BODY_HEIGHT,
+            MAX_BODY_HEIGHT
+        );
+
+    robotClient.setBodyHeight(
+        bodyHeight
+    );
+
+    if (state == State::BODY_HEIGHT) {
+        drawBodyHeightValue();
+    }
+}
+
+void Menu::adjustBodyHeight(float amount)
+{
+    setBodyHeight(
+        bodyHeight + amount
+    );
+}
+
 bool Menu::buttonPressed(
     uint8_t pin,
     bool& lastState
@@ -144,7 +174,8 @@ void Menu::enterMenu()
         0.0f
     );
 
-    state = State::MAIN;
+    state =
+        State::MAIN;
 
     tft.fillScreen(
         TFT_BLACK
@@ -161,7 +192,8 @@ void Menu::leaveMenu()
         0.0f
     );
 
-    state = State::CAMERA;
+    state =
+        State::CAMERA;
 
     tft.fillScreen(
         TFT_BLACK
@@ -184,6 +216,8 @@ void Menu::drawHeader(
         TFT_WHITE,
         TFT_DARKGREY
     );
+
+    tft.setTextSize(1);
 
     tft.setCursor(
         10,
@@ -210,6 +244,8 @@ void Menu::drawFooter(
         TFT_WHITE,
         TFT_DARKGREY
     );
+
+    tft.setTextSize(1);
 
     tft.setCursor(
         8,
@@ -279,6 +315,8 @@ void Menu::drawMainMenu()
         ? TFT_DARKCYAN
         : TFT_BLACK
     );
+
+    tft.setTextSize(1);
 
     tft.setCursor(
         22,
@@ -386,6 +424,8 @@ void Menu::drawBodyHeightMenu()
         TFT_BLACK
     );
 
+    tft.setTextSize(1);
+
     tft.setCursor(
         125,
         68
@@ -393,6 +433,40 @@ void Menu::drawBodyHeightMenu()
 
     tft.print(
         "Height"
+    );
+
+    drawBodyHeightValue();
+
+    tft.setTextSize(1);
+
+    tft.setTextColor(
+        TFT_LIGHTGREY,
+        TFT_BLACK
+    );
+
+    tft.setCursor(
+        134,
+        156
+    );
+
+    tft.print(
+        "UP / DOWN"
+    );
+
+    drawFooter(
+        "B1 BACK",
+        "B2 DONE"
+    );
+}
+
+void Menu::drawBodyHeightValue()
+{
+    tft.fillRect(
+        55,
+        92,
+        210,
+        48,
+        TFT_BLACK
     );
 
     char valueText[32];
@@ -424,25 +498,6 @@ void Menu::drawBodyHeightMenu()
     );
 
     tft.setTextSize(1);
-
-    tft.setTextColor(
-        TFT_LIGHTGREY,
-        TFT_BLACK
-    );
-
-    tft.setCursor(
-        134,
-        156
-    );
-
-    tft.print(
-        "UP / DOWN"
-    );
-
-    drawFooter(
-        "B1 BACK",
-        "B2 DONE"
-    );
 }
 
 void Menu::drawGaitMenu()
@@ -468,6 +523,8 @@ void Menu::drawGaitMenu()
         ? TFT_DARKCYAN
         : TFT_BLACK
     );
+
+    tft.setTextSize(1);
 
     tft.setCursor(
         22,
@@ -547,6 +604,7 @@ bool Menu::update()
     if (state == State::CAMERA) {
         if (button1) {
             enterMenu();
+
             return true;
         }
 
@@ -556,6 +614,7 @@ bool Menu::update()
     if (state == State::MAIN) {
         if (button1) {
             leaveMenu();
+
             return false;
         }
 
@@ -619,24 +678,11 @@ bool Menu::update()
                     millis();
 
                 if (navigation > 0.15f) {
-                    bodyHeight += 1.0f;
+                    adjustBodyHeight(1.0f);
                 }
                 else {
-                    bodyHeight -= 1.0f;
+                    adjustBodyHeight(-1.0f);
                 }
-
-                bodyHeight =
-                    constrain(
-                        bodyHeight,
-                        -100.0f,
-                        25.0f
-                    );
-
-                robotClient.setBodyHeight(
-                    bodyHeight
-                );
-
-                drawBodyHeightMenu();
             }
         }
 
