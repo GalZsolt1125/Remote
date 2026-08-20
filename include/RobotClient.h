@@ -26,6 +26,16 @@ public:
 
     void setBodyHeight(float height);
 
+    void setBodyOffset(float x, float y, float z);
+
+    void setGait(RobotProtocol::GaitTypeWire gait);
+
+    void setStepLength(float length);
+
+    void setStepHeight(float height);
+
+    void setStepPeriod(float period);
+
 private:
     void sendPacket(
         RobotProtocol::CommandType command,

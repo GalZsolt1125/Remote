@@ -85,9 +85,15 @@ void RobotClient::sendPacket(
         crcData[3 + i] = payload[i];
     }
 
-    packet[4 + length] = crc8(crcData, 3 + length);
+    packet[4 + length] = crc8(
+        crcData,
+        3 + length
+    );
 
-    client.write(packet, 5 + length);
+    client.write(
+        packet,
+        5 + length
+    );
 }
 
 void RobotClient::start()
@@ -135,6 +141,77 @@ void RobotClient::setBodyHeight(float height)
 
     sendPacket(
         CommandType::SET_BODY_HEIGHT,
+        reinterpret_cast<const uint8_t*>(&payload),
+        sizeof(payload)
+    );
+}
+
+void RobotClient::setBodyOffset(
+    float x,
+    float y,
+    float z
+)
+{
+    BodyOffsetPayload payload;
+
+    payload.x = x;
+    payload.y = y;
+    payload.z = z;
+
+    sendPacket(
+        CommandType::SET_BODY_OFFSET,
+        reinterpret_cast<const uint8_t*>(&payload),
+        sizeof(payload)
+    );
+}
+
+void RobotClient::setGait(GaitTypeWire gait)
+{
+    GaitPayload payload;
+
+    payload.type = static_cast<uint8_t>(gait);
+
+    sendPacket(
+        CommandType::SET_GAIT,
+        reinterpret_cast<const uint8_t*>(&payload),
+        sizeof(payload)
+    );
+}
+
+void RobotClient::setStepLength(float length)
+{
+    FloatPayload payload;
+
+    payload.value = length;
+
+    sendPacket(
+        CommandType::SET_STEP_LENGTH,
+        reinterpret_cast<const uint8_t*>(&payload),
+        sizeof(payload)
+    );
+}
+
+void RobotClient::setStepHeight(float height)
+{
+    FloatPayload payload;
+
+    payload.value = height;
+
+    sendPacket(
+        CommandType::SET_STEP_HEIGHT,
+        reinterpret_cast<const uint8_t*>(&payload),
+        sizeof(payload)
+    );
+}
+
+void RobotClient::setStepPeriod(float period)
+{
+    FloatPayload payload;
+
+    payload.value = period;
+
+    sendPacket(
+        CommandType::SET_STEP_PERIOD,
         reinterpret_cast<const uint8_t*>(&payload),
         sizeof(payload)
     );

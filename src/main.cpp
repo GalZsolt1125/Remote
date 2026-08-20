@@ -4,6 +4,7 @@
 #include <TJpg_Decoder.h>
 #include "esp_heap_caps.h"
 #include "RobotClient.h"
+#include "Menu.h"
 
 const char* ssid = "ESP32-CAM-STREAM";
 const char* password = "011235813";
@@ -24,18 +25,33 @@ const int CONTROL_PORT = 9000;
 #define JOYSTICK_CENTER   2048
 
 TFT_eSPI tft = TFT_eSPI();
+
 WiFiClient streamClient;
+
 RobotClient robotClient;
 
+Menu menu(
+    tft,
+    robotClient,
+    ROBOT_JOY_Y_PIN,
+    BUTTON_1_PIN,
+    BUTTON_2_PIN
+);
+
 uint8_t* jpg_buffer = NULL;
+
 const size_t MAX_JPG_SIZE = 64 * 1024;
+
 uint8_t net_buf[1024];
 
 unsigned long lastMotionSend = 0;
+
 const unsigned long MOTION_INTERVAL = 50;
 
 float currentBodyHeight = -20.0f;
+
 const float MIN_HEIGHT = -100.0f;
+
 const float MAX_HEIGHT = 25.0f;
 
 bool isMoving = false;
@@ -52,21 +68,33 @@ bool tft_output(
         return false;
     }
 
-    tft.pushImage(x, y, w, h, bitmap);
+    tft.pushImage(
+        x,
+        y,
+        w,
+        h,
+        bitmap
+    );
 
     return true;
 }
 
-float readJoystick(int pin, bool invert)
+float readJoystick(
+    int pin,
+    bool invert
+)
 {
-    int value = analogRead(pin);
+    int value =
+        analogRead(pin);
+
     float result;
 
     if (value > JOYSTICK_CENTER) {
         result =
             (float)(value - JOYSTICK_CENTER) /
             (4095.0f - JOYSTICK_CENTER);
-    } else {
+    }
+    else {
         result =
             (float)(value - JOYSTICK_CENTER) /
             JOYSTICK_CENTER;
@@ -80,7 +108,11 @@ float readJoystick(int pin, bool invert)
         result = -result;
     }
 
-    return constrain(result, -1.0f, 1.0f);
+    return constrain(
+        result,
+        -1.0f,
+        1.0f
+    );
 }
 
 void updateRobotControl()
@@ -103,10 +135,20 @@ void updateRobotControl()
             true
         );
 
-    float rot = raw_rot * 10.0f;
+    const float MOVEMENT_DEADZONE = 0.05f;
 
-    if (y > 0.05f) {
-        rot = -rot;
+    float rot = 0.0f;
+
+    if (fabs(raw_rot) > 0.01f) {
+        if (y > MOVEMENT_DEADZONE) {
+            rot = -raw_rot * 10.0f;
+        }
+        else if (y < -MOVEMENT_DEADZONE) {
+            rot = raw_rot * 10.0f;
+        }
+        else {
+            rot = raw_rot * 10.0f;
+        }
     }
 
     if (
@@ -141,7 +183,8 @@ void updateRobotControl()
         );
 
     if (fabs(heightInput) > 0.1f) {
-        currentBodyHeight += heightInput * 8.0f;
+        currentBodyHeight +=
+            heightInput * 8.0f;
 
         currentBodyHeight =
             constrain(
@@ -162,11 +205,27 @@ void connectStream()
         return;
     }
 
-    if (streamClient.connect(host, STREAM_PORT)) {
-        streamClient.println("GET /stream HTTP/1.1");
-        streamClient.print("Host: ");
+    if (
+        streamClient.connect(
+            host,
+            STREAM_PORT
+        )
+    )
+    {
+        streamClient.println(
+            "GET /stream HTTP/1.1"
+        );
+
+        streamClient.print(
+            "Host: "
+        );
+
         streamClient.println(host);
-        streamClient.println("Connection: close");
+
+        streamClient.println(
+            "Connection: close"
+        );
+
         streamClient.println();
     }
 }
@@ -178,10 +237,15 @@ void updateStream()
     }
 
     static size_t jpg_pos = 0;
+
     static bool in_jpg = false;
+
     static uint8_t prev_byte = 0;
 
-    while (streamClient.available() > 0) {
+    while (
+        streamClient.available() > 0
+    )
+    {
         int bytesRead =
             streamClient.read(
                 net_buf,
@@ -192,8 +256,14 @@ void updateStream()
             break;
         }
 
-        for (int i = 0; i < bytesRead; i++) {
-            uint8_t b = net_buf[i];
+        for (
+            int i = 0;
+            i < bytesRead;
+            i++
+        )
+        {
+            uint8_t b =
+                net_buf[i];
 
             if (
                 !in_jpg &&
@@ -203,15 +273,23 @@ void updateStream()
             {
                 in_jpg = true;
 
-                jpg_buffer[0] = 0xFF;
-                jpg_buffer[1] = 0xD8;
+                jpg_buffer[0] =
+                    0xFF;
+
+                jpg_buffer[1] =
+                    0xD8;
 
                 jpg_pos = 2;
             }
             else if (in_jpg)
             {
-                if (jpg_pos < MAX_JPG_SIZE) {
-                    jpg_buffer[jpg_pos++] = b;
+                if (
+                    jpg_pos <
+                    MAX_JPG_SIZE
+                )
+                {
+                    jpg_buffer[jpg_pos++] =
+                        b;
                 }
 
                 if (
@@ -245,20 +323,43 @@ void setup()
 {
     Serial.begin(115200);
 
-    pinMode(17, OUTPUT);
-    digitalWrite(17, HIGH);
+    pinMode(
+        17,
+        OUTPUT
+    );
 
-    pinMode(BUTTON_1_PIN, INPUT_PULLUP);
-    pinMode(BUTTON_2_PIN, INPUT_PULLUP);
+    digitalWrite(
+        17,
+        HIGH
+    );
+
+    pinMode(
+        BUTTON_1_PIN,
+        INPUT_PULLUP
+    );
+
+    pinMode(
+        BUTTON_2_PIN,
+        INPUT_PULLUP
+    );
 
     analogReadResolution(12);
 
     delay(1000);
 
     tft.begin();
+
     tft.setRotation(1);
-    tft.fillScreen(TFT_BLACK);
-    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+
+    tft.fillScreen(
+        TFT_BLACK
+    );
+
+    tft.setTextColor(
+        TFT_WHITE,
+        TFT_BLACK
+    );
+
     tft.drawString(
         "Inditas...",
         10,
@@ -282,7 +383,11 @@ void setup()
     }
 
     TJpgDec.setJpgScale(1);
-    TJpgDec.setCallback(tft_output);
+
+    TJpgDec.setCallback(
+        tft_output
+    );
+
     TJpgDec.setSwapBytes(true);
 
     WiFi.begin(
@@ -290,16 +395,24 @@ void setup()
         password
     );
 
-    while (WiFi.status() != WL_CONNECTED) {
+    while (
+        WiFi.status() !=
+        WL_CONNECTED
+    )
+    {
         delay(200);
     }
 
-    tft.fillScreen(TFT_BLACK);
+    tft.fillScreen(
+        TFT_BLACK
+    );
 
     robotClient.begin(
         host,
         CONTROL_PORT
     );
+
+    menu.begin();
 }
 
 void loop()
@@ -308,8 +421,11 @@ void loop()
         return;
     }
 
-    connectStream();
-    updateStream();
+    if (!menu.isActive()) {
+        connectStream();
+
+        updateStream();
+    }
 
     if (!robotClient.connected()) {
         if (robotClient.connect()) {
@@ -319,12 +435,18 @@ void loop()
         }
     }
 
+    bool menuActive =
+        menu.update();
+
     if (
+        !menuActive &&
         robotClient.connected() &&
-        millis() - lastMotionSend >= MOTION_INTERVAL
+        millis() - lastMotionSend >=
+        MOTION_INTERVAL
     )
     {
-        lastMotionSend = millis();
+        lastMotionSend =
+            millis();
 
         updateRobotControl();
     }
