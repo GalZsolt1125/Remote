@@ -9,7 +9,10 @@ RobotClient::RobotClient()
     txSequence = 0;
 }
 
-void RobotClient::begin(const char* robotHost, uint16_t robotPort)
+void RobotClient::begin(
+    const char* robotHost,
+    uint16_t robotPort
+)
 {
     host = robotHost;
     port = robotPort;
@@ -25,13 +28,17 @@ bool RobotClient::connect()
         return false;
     }
 
-    Serial.println("Robot control csatlakozas...");
+    Serial.println(
+        "Robot control csatlakozas..."
+    );
 
     if (!client.connect(host, port)) {
         return false;
     }
 
-    Serial.println("Robot control csatlakoztatva!");
+    Serial.println(
+        "Robot control csatlakoztatva!"
+    );
 
     start();
 
@@ -64,31 +71,60 @@ void RobotClient::sendPacket(
         return;
     }
 
-    uint8_t packet[4 + MAX_PAYLOAD_SIZE + 1];
+    uint8_t packet[
+        4 + MAX_PAYLOAD_SIZE + 1
+    ];
 
-    packet[0] = FRAME_HEADER;
-    packet[1] = static_cast<uint8_t>(command);
-    packet[2] = txSequence++;
-    packet[3] = length;
+    packet[0] =
+        FRAME_HEADER;
 
-    for (uint8_t i = 0; i < length; i++) {
-        packet[4 + i] = payload[i];
+    packet[1] =
+        static_cast<uint8_t>(command);
+
+    packet[2] =
+        txSequence++;
+
+    packet[3] =
+        length;
+
+    for (
+        uint8_t i = 0;
+        i < length;
+        i++
+    )
+    {
+        packet[4 + i] =
+            payload[i];
     }
 
-    uint8_t crcData[3 + MAX_PAYLOAD_SIZE];
+    uint8_t crcData[
+        3 + MAX_PAYLOAD_SIZE
+    ];
 
-    crcData[0] = static_cast<uint8_t>(command);
-    crcData[1] = packet[2];
-    crcData[2] = length;
+    crcData[0] =
+        static_cast<uint8_t>(command);
 
-    for (uint8_t i = 0; i < length; i++) {
-        crcData[3 + i] = payload[i];
+    crcData[1] =
+        packet[2];
+
+    crcData[2] =
+        length;
+
+    for (
+        uint8_t i = 0;
+        i < length;
+        i++
+    )
+    {
+        crcData[3 + i] =
+            payload[i];
     }
 
-    packet[4 + length] = crc8(
-        crcData,
-        3 + length
-    );
+    packet[4 + length] =
+        crc8(
+            crcData,
+            3 + length
+        );
 
     client.write(
         packet,
@@ -133,7 +169,9 @@ void RobotClient::setMotion(
     );
 }
 
-void RobotClient::setBodyHeight(float height)
+void RobotClient::setBodyHeight(
+    float height
+)
 {
     FloatPayload payload;
 
@@ -165,11 +203,14 @@ void RobotClient::setBodyOffset(
     );
 }
 
-void RobotClient::setGait(GaitTypeWire gait)
+void RobotClient::setGait(
+    GaitTypeWire gait
+)
 {
     GaitPayload payload;
 
-    payload.type = static_cast<uint8_t>(gait);
+    payload.type =
+        static_cast<uint8_t>(gait);
 
     sendPacket(
         CommandType::SET_GAIT,
@@ -178,7 +219,9 @@ void RobotClient::setGait(GaitTypeWire gait)
     );
 }
 
-void RobotClient::setStepLength(float length)
+void RobotClient::setStepLength(
+    float length
+)
 {
     FloatPayload payload;
 
@@ -191,7 +234,9 @@ void RobotClient::setStepLength(float length)
     );
 }
 
-void RobotClient::setStepHeight(float height)
+void RobotClient::setStepHeight(
+    float height
+)
 {
     FloatPayload payload;
 
@@ -204,7 +249,9 @@ void RobotClient::setStepHeight(float height)
     );
 }
 
-void RobotClient::setStepPeriod(float period)
+void RobotClient::setStepPeriod(
+    float period
+)
 {
     FloatPayload payload;
 

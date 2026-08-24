@@ -13,9 +13,14 @@ Menu::Menu(
       button1Pin(button1Pin),
       button2Pin(button2Pin),
       state(State::CAMERA),
-      selectedMainItem(MainItem::BODY_HEIGHT),
-      selectedGait(GaitItem::TRIPOD),
+      selectedMainItem(MainItem::BODY),
+      selectedBodyItem(BodyItem::BODY_HEIGHT),
+      selectedGaitItem(GaitItem::GAIT_TYPE),
+      selectedGaitType(GaitTypeItem::TRIPOD),
       bodyHeight(-20.0f),
+      stepLength(80.0f),
+      stepHeight(40.0f),
+      stepPeriod(1.0f),
       lastButton1State(HIGH),
       lastButton2State(HIGH),
       lastInputTime(0),
@@ -25,10 +30,25 @@ Menu::Menu(
 
 void Menu::begin()
 {
-    state = State::CAMERA;
-    selectedMainItem = MainItem::BODY_HEIGHT;
-    selectedGait = GaitItem::TRIPOD;
+    state =
+        State::CAMERA;
+
+    selectedMainItem =
+        MainItem::BODY;
+
+    selectedBodyItem =
+        BodyItem::BODY_HEIGHT;
+
+    selectedGaitItem =
+        GaitItem::GAIT_TYPE;
+
+    selectedGaitType =
+        GaitTypeItem::TRIPOD;
+
     bodyHeight = -20.0f;
+    stepLength = 80.0f;
+    stepHeight = 40.0f;
+    stepPeriod = 1.0f;
 }
 
 bool Menu::isActive() const
@@ -41,7 +61,9 @@ float Menu::getBodyHeight() const
     return bodyHeight;
 }
 
-void Menu::setBodyHeight(float height)
+void Menu::setBodyHeight(
+    float height
+)
 {
     bodyHeight =
         constrain(
@@ -54,16 +76,110 @@ void Menu::setBodyHeight(float height)
         bodyHeight
     );
 
-    if (state == State::BODY_HEIGHT) {
-        drawBodyHeightValue();
+    if (
+        state ==
+        State::BODY_HEIGHT
+    )
+    {
+        drawNumericValue(
+            bodyHeight,
+            "mm",
+            0
+        );
     }
 }
 
-void Menu::adjustBodyHeight(float amount)
+void Menu::adjustBodyHeight(
+    float amount
+)
 {
     setBodyHeight(
         bodyHeight + amount
     );
+}
+
+void Menu::adjustStepLength(
+    float amount
+)
+{
+    stepLength =
+        constrain(
+            stepLength + amount,
+            MIN_STEP_LENGTH,
+            MAX_STEP_LENGTH
+        );
+
+    robotClient.setStepLength(
+        stepLength
+    );
+
+    if (
+        state ==
+        State::STEP_LENGTH
+    )
+    {
+        drawNumericValue(
+            stepLength,
+            "mm",
+            0
+        );
+    }
+}
+
+void Menu::adjustStepHeight(
+    float amount
+)
+{
+    stepHeight =
+        constrain(
+            stepHeight + amount,
+            MIN_STEP_HEIGHT,
+            MAX_STEP_HEIGHT
+        );
+
+    robotClient.setStepHeight(
+        stepHeight
+    );
+
+    if (
+        state ==
+        State::STEP_HEIGHT
+    )
+    {
+        drawNumericValue(
+            stepHeight,
+            "mm",
+            0
+        );
+    }
+}
+
+void Menu::adjustStepPeriod(
+    float amount
+)
+{
+    stepPeriod =
+        constrain(
+            stepPeriod + amount,
+            MIN_STEP_PERIOD,
+            MAX_STEP_PERIOD
+        );
+
+    robotClient.setStepPeriod(
+        stepPeriod
+    );
+
+    if (
+        state ==
+        State::STEP_PERIOD
+    )
+    {
+        drawNumericValue(
+            stepPeriod,
+            "s",
+            2
+        );
+    }
 }
 
 bool Menu::buttonPressed(
@@ -78,7 +194,8 @@ bool Menu::buttonPressed(
         lastState == HIGH &&
         currentState == LOW;
 
-    lastState = currentState;
+    lastState =
+        currentState;
 
     if (!pressed) {
         return false;
@@ -87,7 +204,8 @@ bool Menu::buttonPressed(
     if (
         millis() - lastButtonTime <
         BUTTON_DEBOUNCE
-    ) {
+    )
+    {
         return false;
     }
 
@@ -100,16 +218,20 @@ bool Menu::buttonPressed(
 float Menu::readNavigation()
 {
     int value =
-        analogRead(navigationPin);
+        analogRead(
+            navigationPin
+        );
 
     float result;
 
-    if (value > 2048) {
+    if (value > 2048)
+    {
         result =
             (float)(value - 2048) /
             (4095.0f - 2048.0f);
     }
-    else {
+    else
+    {
         result =
             (float)(value - 2048) /
             2048.0f;
@@ -131,16 +253,16 @@ bool Menu::navigationUp()
     float value =
         readNavigation();
 
-    if (value <= -0.15f) {
-        if (
-            millis() - lastInputTime >=
-            INPUT_REPEAT_DELAY
-        ) {
-            lastInputTime =
-                millis();
+    if (
+        value <= -0.15f &&
+        millis() - lastInputTime >=
+        INPUT_REPEAT_DELAY
+    )
+    {
+        lastInputTime =
+            millis();
 
-            return true;
-        }
+        return true;
     }
 
     return false;
@@ -151,16 +273,16 @@ bool Menu::navigationDown()
     float value =
         readNavigation();
 
-    if (value >= 0.15f) {
-        if (
-            millis() - lastInputTime >=
-            INPUT_REPEAT_DELAY
-        ) {
-            lastInputTime =
-                millis();
+    if (
+        value >= 0.15f &&
+        millis() - lastInputTime >=
+        INPUT_REPEAT_DELAY
+    )
+    {
+        lastInputTime =
+            millis();
 
-            return true;
-        }
+        return true;
     }
 
     return false;
@@ -270,24 +392,26 @@ void Menu::drawSelection(
     bool selected
 )
 {
-    if (selected) {
+    if (selected)
+    {
         tft.fillRoundRect(
             8,
             y,
             304,
             38,
-            4,
+            5,
             TFT_DARKCYAN
         );
     }
-    else {
-        tft.fillRoundRect(
+    else
+    {
+        tft.drawRoundRect(
             8,
             y,
             304,
             38,
-            4,
-            TFT_BLACK
+            5,
+            TFT_DARKGREY
         );
     }
 }
@@ -303,15 +427,15 @@ void Menu::drawMainMenu()
     );
 
     drawSelection(
-        58,
+        60,
         selectedMainItem ==
-        MainItem::BODY_HEIGHT
+        MainItem::BODY
     );
 
     tft.setTextColor(
         TFT_WHITE,
         selectedMainItem ==
-        MainItem::BODY_HEIGHT
+        MainItem::BODY
         ? TFT_DARKCYAN
         : TFT_BLACK
     );
@@ -320,36 +444,15 @@ void Menu::drawMainMenu()
 
     tft.setCursor(
         22,
-        69
+        72
     );
 
     tft.print(
-        "Body Height"
-    );
-
-    char heightText[32];
-
-    snprintf(
-        heightText,
-        sizeof(heightText),
-        "%.0f mm",
-        bodyHeight
-    );
-
-    int heightWidth =
-        strlen(heightText) * 12;
-
-    tft.setCursor(
-        300 - heightWidth,
-        69
-    );
-
-    tft.print(
-        heightText
+        "BODY"
     );
 
     drawSelection(
-        106,
+        108,
         selectedMainItem ==
         MainItem::GAIT
     );
@@ -364,43 +467,11 @@ void Menu::drawMainMenu()
 
     tft.setCursor(
         22,
-        117
+        120
     );
 
     tft.print(
-        "Gait"
-    );
-
-    const char* gaitName;
-
-    switch (selectedGait) {
-        case GaitItem::TRIPOD:
-            gaitName = "Tripod";
-            break;
-
-        case GaitItem::WAVE:
-            gaitName = "Wave";
-            break;
-
-        case GaitItem::DANCE:
-            gaitName = "Dance";
-            break;
-
-        default:
-            gaitName = "Tripod";
-            break;
-    }
-
-    int gaitWidth =
-        strlen(gaitName) * 12;
-
-    tft.setCursor(
-        300 - gaitWidth,
-        117
-    );
-
-    tft.print(
-        gaitName
+        "GAIT / MOVEMENT"
     );
 
     drawFooter(
@@ -409,14 +480,267 @@ void Menu::drawMainMenu()
     );
 }
 
-void Menu::drawBodyHeightMenu()
+void Menu::drawBodyMenu()
 {
     tft.fillScreen(
         TFT_BLACK
     );
 
     drawHeader(
-        "BODY HEIGHT"
+        "BODY"
+    );
+
+    drawSelection(
+        65,
+        selectedBodyItem ==
+        BodyItem::BODY_HEIGHT
+    );
+
+    tft.setTextColor(
+        TFT_WHITE,
+        selectedBodyItem ==
+        BodyItem::BODY_HEIGHT
+        ? TFT_DARKCYAN
+        : TFT_BLACK
+    );
+
+    tft.setCursor(
+        22,
+        77
+    );
+
+    tft.print(
+        "Body Height"
+    );
+
+    char text[32];
+
+    snprintf(
+        text,
+        sizeof(text),
+        "%.0f mm",
+        bodyHeight
+    );
+
+    tft.setCursor(
+        250,
+        77
+    );
+
+    tft.print(text);
+
+    drawFooter(
+        "B1 BACK",
+        "B2 SELECT"
+    );
+}
+
+void Menu::drawGaitMenu()
+{
+    tft.fillScreen(
+        TFT_BLACK
+    );
+
+    drawHeader(
+        "GAIT / MOVEMENT"
+    );
+
+    drawSelection(
+        48,
+        selectedGaitItem ==
+        GaitItem::GAIT_TYPE
+    );
+
+    tft.setTextColor(
+        TFT_WHITE,
+        selectedGaitItem ==
+        GaitItem::GAIT_TYPE
+        ? TFT_DARKCYAN
+        : TFT_BLACK
+    );
+
+    tft.setCursor(
+        22,
+        60
+    );
+
+    tft.print(
+        "Gait Type"
+    );
+
+    drawSelection(
+        92,
+        selectedGaitItem ==
+        GaitItem::STEP_LENGTH
+    );
+
+    tft.setTextColor(
+        TFT_WHITE,
+        selectedGaitItem ==
+        GaitItem::STEP_LENGTH
+        ? TFT_DARKCYAN
+        : TFT_BLACK
+    );
+
+    tft.setCursor(
+        22,
+        104
+    );
+
+    tft.print(
+        "Step Length"
+    );
+
+    drawSelection(
+        136,
+        selectedGaitItem ==
+        GaitItem::STEP_HEIGHT
+    );
+
+    tft.setTextColor(
+        TFT_WHITE,
+        selectedGaitItem ==
+        GaitItem::STEP_HEIGHT
+        ? TFT_DARKCYAN
+        : TFT_BLACK
+    );
+
+    tft.setCursor(
+        22,
+        148
+    );
+
+    tft.print(
+        "Step Height"
+    );
+
+    drawSelection(
+        180,
+        selectedGaitItem ==
+        GaitItem::STEP_PERIOD
+    );
+
+    tft.setTextColor(
+        TFT_WHITE,
+        selectedGaitItem ==
+        GaitItem::STEP_PERIOD
+        ? TFT_DARKCYAN
+        : TFT_BLACK
+    );
+
+    tft.setCursor(
+        22,
+        192
+    );
+
+    tft.print(
+        "Step Period"
+    );
+
+    drawFooter(
+        "B1 BACK",
+        "B2 SELECT"
+    );
+}
+
+void Menu::drawGaitTypeMenu()
+{
+    tft.fillScreen(
+        TFT_BLACK
+    );
+
+    drawHeader(
+        "GAIT TYPE"
+    );
+
+    drawSelection(
+        48,
+        selectedGaitType ==
+        GaitTypeItem::TRIPOD
+    );
+
+    tft.setTextColor(
+        TFT_WHITE,
+        selectedGaitType ==
+        GaitTypeItem::TRIPOD
+        ? TFT_DARKCYAN
+        : TFT_BLACK
+    );
+
+    tft.setCursor(
+        22,
+        60
+    );
+
+    tft.print(
+        "TRIPOD"
+    );
+
+    drawSelection(
+        94,
+        selectedGaitType ==
+        GaitTypeItem::WAVE
+    );
+
+    tft.setTextColor(
+        TFT_WHITE,
+        selectedGaitType ==
+        GaitTypeItem::WAVE
+        ? TFT_DARKCYAN
+        : TFT_BLACK
+    );
+
+    tft.setCursor(
+        22,
+        106
+    );
+
+    tft.print(
+        "WAVE"
+    );
+
+    drawSelection(
+        140,
+        selectedGaitType ==
+        GaitTypeItem::DANCE
+    );
+
+    tft.setTextColor(
+        TFT_WHITE,
+        selectedGaitType ==
+        GaitTypeItem::DANCE
+        ? TFT_DARKCYAN
+        : TFT_BLACK
+    );
+
+    tft.setCursor(
+        22,
+        152
+    );
+
+    tft.print(
+        "DANCE"
+    );
+
+    drawFooter(
+        "B1 BACK",
+        "B2 SELECT"
+    );
+}
+
+void Menu::drawNumericEditor(
+    const char* title,
+    float value,
+    const char* unit,
+    uint8_t decimals
+)
+{
+    tft.fillScreen(
+        TFT_BLACK
+    );
+
+    drawHeader(
+        title
     );
 
     tft.setTextColor(
@@ -427,25 +751,29 @@ void Menu::drawBodyHeightMenu()
     tft.setTextSize(1);
 
     tft.setCursor(
-        125,
+        120,
         68
     );
 
     tft.print(
-        "Height"
+        "VALUE"
     );
 
-    drawBodyHeightValue();
-
-    tft.setTextSize(1);
+    drawNumericValue(
+        value,
+        unit,
+        decimals
+    );
 
     tft.setTextColor(
         TFT_LIGHTGREY,
         TFT_BLACK
     );
 
+    tft.setTextSize(1);
+
     tft.setCursor(
-        134,
+        122,
         156
     );
 
@@ -459,12 +787,16 @@ void Menu::drawBodyHeightMenu()
     );
 }
 
-void Menu::drawBodyHeightValue()
+void Menu::drawNumericValue(
+    float value,
+    const char* unit,
+    uint8_t decimals
+)
 {
     tft.fillRect(
-        55,
+        40,
         92,
-        210,
+        240,
         48,
         TFT_BLACK
     );
@@ -474,8 +806,11 @@ void Menu::drawBodyHeightValue()
     snprintf(
         valueText,
         sizeof(valueText),
-        "%.0f mm",
-        bodyHeight
+        decimals == 0
+            ? "%.0f %s"
+            : "%.2f %s",
+        value,
+        unit
     );
 
     tft.setTextColor(
@@ -500,90 +835,77 @@ void Menu::drawBodyHeightValue()
     tft.setTextSize(1);
 }
 
-void Menu::drawGaitMenu()
+void Menu::drawBodyHeightMenu()
 {
-    tft.fillScreen(
-        TFT_BLACK
+    drawNumericEditor(
+        "BODY HEIGHT",
+        bodyHeight,
+        "mm",
+        0
     );
+}
 
-    drawHeader(
-        "GAIT"
+void Menu::drawStepLengthMenu()
+{
+    drawNumericEditor(
+        "STEP LENGTH",
+        stepLength,
+        "mm",
+        0
     );
+}
 
-    drawSelection(
-        48,
-        selectedGait ==
-        GaitItem::TRIPOD
+void Menu::drawStepHeightMenu()
+{
+    drawNumericEditor(
+        "STEP HEIGHT",
+        stepHeight,
+        "mm",
+        0
     );
+}
 
-    tft.setTextColor(
-        TFT_WHITE,
-        selectedGait ==
-        GaitItem::TRIPOD
-        ? TFT_DARKCYAN
-        : TFT_BLACK
+void Menu::drawStepPeriodMenu()
+{
+    drawNumericEditor(
+        "STEP PERIOD",
+        stepPeriod,
+        "s",
+        2
     );
+}
 
-    tft.setTextSize(1);
+void Menu::applyGaitType()
+{
+    RobotProtocol::GaitTypeWire gait;
 
-    tft.setCursor(
-        22,
-        59
-    );
+    switch (
+        selectedGaitType
+    )
+    {
+        case GaitTypeItem::TRIPOD:
+            gait =
+                RobotProtocol::GaitTypeWire::TRIPOD;
+            break;
 
-    tft.print(
-        "Tripod"
-    );
+        case GaitTypeItem::WAVE:
+            gait =
+                RobotProtocol::GaitTypeWire::WAVE;
+            break;
 
-    drawSelection(
-        94,
-        selectedGait ==
-        GaitItem::WAVE
-    );
+        case GaitTypeItem::DANCE:
+            gait =
+                RobotProtocol::GaitTypeWire::DANCE;
+            break;
 
-    tft.setTextColor(
-        TFT_WHITE,
-        selectedGait ==
-        GaitItem::WAVE
-        ? TFT_DARKCYAN
-        : TFT_BLACK
-    );
+        default:
+            gait =
+                RobotProtocol::GaitTypeWire::TRIPOD;
+            break;
+    }
 
-    tft.setCursor(
-        22,
-        105
-    );
-
-    tft.print(
-        "Wave"
-    );
-
-    drawSelection(
-        140,
-        selectedGait ==
-        GaitItem::DANCE
-    );
-
-    tft.setTextColor(
-        TFT_WHITE,
-        selectedGait ==
-        GaitItem::DANCE
-        ? TFT_DARKCYAN
-        : TFT_BLACK
-    );
-
-    tft.setCursor(
-        22,
-        151
-    );
-
-    tft.print(
-        "Dance"
-    );
-
-    drawFooter(
-        "B1 BACK",
-        "B2 SELECT"
+    robotClient.setGait(
+        gait
     );
 }
 
@@ -601,48 +923,61 @@ bool Menu::update()
             lastButton2State
         );
 
-    if (state == State::CAMERA) {
-        if (button1) {
+    if (
+        state ==
+        State::CAMERA
+    )
+    {
+        if (button1)
+        {
             enterMenu();
-
             return true;
         }
 
         return false;
     }
 
-    if (state == State::MAIN) {
-        if (button1) {
+    if (
+        state ==
+        State::MAIN
+    )
+    {
+        if (button1)
+        {
             leaveMenu();
-
             return false;
         }
 
-        if (navigationUp()) {
+        if (navigationUp())
+        {
             selectedMainItem =
-                MainItem::BODY_HEIGHT;
+                MainItem::BODY;
 
             drawMainMenu();
         }
 
-        if (navigationDown()) {
+        if (navigationDown())
+        {
             selectedMainItem =
                 MainItem::GAIT;
 
             drawMainMenu();
         }
 
-        if (button2) {
+        if (button2)
+        {
             if (
                 selectedMainItem ==
-                MainItem::BODY_HEIGHT
-            ) {
+                MainItem::BODY
+            )
+            {
                 state =
-                    State::BODY_HEIGHT;
+                    State::BODY;
 
-                drawBodyHeightMenu();
+                drawBodyMenu();
             }
-            else {
+            else
+            {
                 state =
                     State::GAIT;
 
@@ -653,8 +988,13 @@ bool Menu::update()
         return true;
     }
 
-    if (state == State::BODY_HEIGHT) {
-        if (button1 || button2) {
+    if (
+        state ==
+        State::BODY
+    )
+    {
+        if (button1)
+        {
             state =
                 State::MAIN;
 
@@ -663,113 +1003,336 @@ bool Menu::update()
             return true;
         }
 
-        float navigation =
-            readNavigation();
+        if (button2)
+        {
+            state =
+                State::BODY_HEIGHT;
 
-        if (
-            navigation > 0.15f ||
-            navigation < -0.15f
-        ) {
+            drawBodyHeightMenu();
+
+            return true;
+        }
+
+        return true;
+    }
+
+    if (
+        state ==
+        State::GAIT
+    )
+    {
+        if (button1)
+        {
+            state =
+                State::MAIN;
+
+            drawMainMenu();
+
+            return true;
+        }
+
+        if (navigationUp())
+        {
             if (
-                millis() - lastInputTime >=
-                INPUT_REPEAT_DELAY
-            ) {
-                lastInputTime =
-                    millis();
+                selectedGaitItem ==
+                GaitItem::STEP_LENGTH
+            )
+            {
+                selectedGaitItem =
+                    GaitItem::GAIT_TYPE;
+            }
+            else if (
+                selectedGaitItem ==
+                GaitItem::STEP_HEIGHT
+            )
+            {
+                selectedGaitItem =
+                    GaitItem::STEP_LENGTH;
+            }
+            else if (
+                selectedGaitItem ==
+                GaitItem::STEP_PERIOD
+            )
+            {
+                selectedGaitItem =
+                    GaitItem::STEP_HEIGHT;
+            }
 
-                if (navigation > 0.15f) {
-                    adjustBodyHeight(1.0f);
-                }
-                else {
-                    adjustBodyHeight(-1.0f);
-                }
+            drawGaitMenu();
+        }
+
+        if (navigationDown())
+        {
+            if (
+                selectedGaitItem ==
+                GaitItem::GAIT_TYPE
+            )
+            {
+                selectedGaitItem =
+                    GaitItem::STEP_LENGTH;
+            }
+            else if (
+                selectedGaitItem ==
+                GaitItem::STEP_LENGTH
+            )
+            {
+                selectedGaitItem =
+                    GaitItem::STEP_HEIGHT;
+            }
+            else if (
+                selectedGaitItem ==
+                GaitItem::STEP_HEIGHT
+            )
+            {
+                selectedGaitItem =
+                    GaitItem::STEP_PERIOD;
+            }
+
+            drawGaitMenu();
+        }
+
+        if (button2)
+        {
+            switch (
+                selectedGaitItem
+            )
+            {
+                case GaitItem::GAIT_TYPE:
+
+                    state =
+                        State::GAIT_TYPE;
+
+                    drawGaitTypeMenu();
+
+                    break;
+
+                case GaitItem::STEP_LENGTH:
+
+                    state =
+                        State::STEP_LENGTH;
+
+                    drawStepLengthMenu();
+
+                    break;
+
+                case GaitItem::STEP_HEIGHT:
+
+                    state =
+                        State::STEP_HEIGHT;
+
+                    drawStepHeightMenu();
+
+                    break;
+
+                case GaitItem::STEP_PERIOD:
+
+                    state =
+                        State::STEP_PERIOD;
+
+                    drawStepPeriodMenu();
+
+                    break;
             }
         }
 
         return true;
     }
 
-    if (state == State::GAIT) {
-        if (button1) {
+    if (
+        state ==
+        State::GAIT_TYPE
+    )
+    {
+        if (button1)
+        {
             state =
-                State::MAIN;
+                State::GAIT;
 
-            drawMainMenu();
+            drawGaitMenu();
 
             return true;
         }
 
-        if (navigationUp()) {
+        if (navigationUp())
+        {
             if (
-                selectedGait ==
-                GaitItem::WAVE
-            ) {
-                selectedGait =
-                    GaitItem::TRIPOD;
+                selectedGaitType ==
+                GaitTypeItem::WAVE
+            )
+            {
+                selectedGaitType =
+                    GaitTypeItem::TRIPOD;
             }
             else if (
-                selectedGait ==
-                GaitItem::DANCE
-            ) {
-                selectedGait =
-                    GaitItem::WAVE;
+                selectedGaitType ==
+                GaitTypeItem::DANCE
+            )
+            {
+                selectedGaitType =
+                    GaitTypeItem::WAVE;
             }
 
-            drawGaitMenu();
+            drawGaitTypeMenu();
         }
 
-        if (navigationDown()) {
+        if (navigationDown())
+        {
             if (
-                selectedGait ==
-                GaitItem::TRIPOD
-            ) {
-                selectedGait =
-                    GaitItem::WAVE;
+                selectedGaitType ==
+                GaitTypeItem::TRIPOD
+            )
+            {
+                selectedGaitType =
+                    GaitTypeItem::WAVE;
             }
             else if (
-                selectedGait ==
-                GaitItem::WAVE
-            ) {
-                selectedGait =
-                    GaitItem::DANCE;
+                selectedGaitType ==
+                GaitTypeItem::WAVE
+            )
+            {
+                selectedGaitType =
+                    GaitTypeItem::DANCE;
             }
 
-            drawGaitMenu();
+            drawGaitTypeMenu();
         }
 
-        if (button2) {
-            RobotProtocol::GaitTypeWire gait;
-
-            switch (selectedGait) {
-                case GaitItem::TRIPOD:
-                    gait =
-                        RobotProtocol::GaitTypeWire::TRIPOD;
-                    break;
-
-                case GaitItem::WAVE:
-                    gait =
-                        RobotProtocol::GaitTypeWire::WAVE;
-                    break;
-
-                case GaitItem::DANCE:
-                    gait =
-                        RobotProtocol::GaitTypeWire::DANCE;
-                    break;
-
-                default:
-                    gait =
-                        RobotProtocol::GaitTypeWire::TRIPOD;
-                    break;
-            }
-
-            robotClient.setGait(
-                gait
-            );
+        if (button2)
+        {
+            applyGaitType();
 
             state =
-                State::MAIN;
+                State::GAIT;
 
-            drawMainMenu();
+            drawGaitMenu();
+        }
+
+        return true;
+    }
+
+    if (
+        state ==
+        State::BODY_HEIGHT
+    )
+    {
+        if (button1 || button2)
+        {
+            state =
+                State::BODY;
+
+            drawBodyMenu();
+
+            return true;
+        }
+
+        if (navigationUp())
+        {
+            adjustBodyHeight(
+                +1.0f
+            );
+        }
+
+        if (navigationDown())
+        {
+            adjustBodyHeight(
+                -1.0f
+            );
+        }
+
+        return true;
+    }
+
+    if (
+        state ==
+        State::STEP_LENGTH
+    )
+    {
+        if (button1 || button2)
+        {
+            state =
+                State::GAIT;
+
+            drawGaitMenu();
+
+            return true;
+        }
+
+        if (navigationUp())
+        {
+            adjustStepLength(
+                +1.0f
+            );
+        }
+
+        if (navigationDown())
+        {
+            adjustStepLength(
+                -1.0f
+            );
+        }
+
+        return true;
+    }
+
+    if (
+        state ==
+        State::STEP_HEIGHT
+    )
+    {
+        if (button1 || button2)
+        {
+            state =
+                State::GAIT;
+
+            drawGaitMenu();
+
+            return true;
+        }
+
+        if (navigationUp())
+        {
+            adjustStepHeight(
+                +1.0f
+            );
+        }
+
+        if (navigationDown())
+        {
+            adjustStepHeight(
+                -1.0f
+            );
+        }
+
+        return true;
+    }
+
+    if (
+        state ==
+        State::STEP_PERIOD
+    )
+    {
+        if (button1 || button2)
+        {
+            state =
+                State::GAIT;
+
+            drawGaitMenu();
+
+            return true;
+        }
+
+        if (navigationUp())
+        {
+            adjustStepPeriod(
+                +0.05f
+            );
+        }
+
+        if (navigationDown())
+        {
+            adjustStepPeriod(
+                -0.05f
+            );
         }
 
         return true;

@@ -2,16 +2,26 @@
 #include <WiFi.h>
 #include <TFT_eSPI.h>
 #include <TJpg_Decoder.h>
+
 #include "esp_heap_caps.h"
+
 #include "RobotClient.h"
 #include "Menu.h"
 
-const char* ssid = "ESP32-CAM-STREAM";
-const char* password = "011235813";
-const char* host = "192.168.4.1";
+const char* ssid =
+    "ESP32-CAM-STREAM";
 
-const int STREAM_PORT = 80;
-const int CONTROL_PORT = 9000;
+const char* password =
+    "011235813";
+
+const char* host =
+    "192.168.4.1";
+
+const int STREAM_PORT =
+    80;
+
+const int CONTROL_PORT =
+    9000;
 
 #define ROBOT_JOY_X_PIN   1
 #define ROBOT_JOY_Y_PIN   2
@@ -24,7 +34,8 @@ const int CONTROL_PORT = 9000;
 
 #define JOYSTICK_CENTER   2048
 
-TFT_eSPI tft = TFT_eSPI();
+TFT_eSPI tft =
+    TFT_eSPI();
 
 WiFiClient streamClient;
 
@@ -38,17 +49,22 @@ Menu menu(
     BUTTON_2_PIN
 );
 
-uint8_t* jpg_buffer = NULL;
+uint8_t* jpg_buffer =
+    NULL;
 
-const size_t MAX_JPG_SIZE = 64 * 1024;
+const size_t MAX_JPG_SIZE =
+    64 * 1024;
 
 uint8_t net_buf[1024];
 
-unsigned long lastMotionSend = 0;
+unsigned long lastMotionSend =
+    0;
 
-const unsigned long MOTION_INTERVAL = 50;
+const unsigned long MOTION_INTERVAL =
+    50;
 
-bool isMoving = false;
+bool isMoving =
+    false;
 
 bool tft_output(
     int16_t x,
@@ -58,7 +74,10 @@ bool tft_output(
     uint16_t* bitmap
 )
 {
-    if (y >= tft.height()) {
+    if (
+        y >= tft.height()
+    )
+    {
         return false;
     }
 
@@ -83,22 +102,39 @@ float readJoystick(
 
     float result;
 
-    if (value > JOYSTICK_CENTER) {
+    if (
+        value > JOYSTICK_CENTER
+    )
+    {
         result =
-            (float)(value - JOYSTICK_CENTER) /
-            (4095.0f - JOYSTICK_CENTER);
+            (float)(
+                value -
+                JOYSTICK_CENTER
+            ) /
+            (
+                4095.0f -
+                JOYSTICK_CENTER
+            );
     }
-    else {
+    else
+    {
         result =
-            (float)(value - JOYSTICK_CENTER) /
+            (float)(
+                value -
+                JOYSTICK_CENTER
+            ) /
             JOYSTICK_CENTER;
     }
 
-    if (fabs(result) < 0.10f) {
+    if (
+        fabs(result) < 0.10f
+    )
+    {
         result = 0.0f;
     }
 
-    if (invert) {
+    if (invert)
+    {
         result = -result;
     }
 
@@ -111,84 +147,48 @@ float readJoystick(
 
 void updateRobotControl()
 {
-    float y =
-        readJoystick(
-            ROBOT_JOY_Y_PIN,
-            true
-        );
+    float y = readJoystick(ROBOT_JOY_Y_PIN, true);
+    float x = readJoystick(RIGHT_JOY_X_PIN, true);
+    float raw_rot = readJoystick(ROBOT_JOY_X_PIN, false);
 
-    float x =
-        readJoystick(
-            RIGHT_JOY_X_PIN,
-            true
-        );
+    const float ROTATION_FACTOR = 14.0f;
 
-    float raw_rot =
-        readJoystick(
-            ROBOT_JOY_X_PIN,
-            true
-        );
+    float rot = raw_rot * ROTATION_FACTOR;
 
-    const float MOVEMENT_DEADZONE = 0.05f;
-
-    float rot = 0.0f;
-
-    if (fabs(raw_rot) > 0.01f) {
-        if (y > MOVEMENT_DEADZONE) {
-            rot =
-                -raw_rot * 10.0f;
-        }
-        else if (y < -MOVEMENT_DEADZONE) {
-            rot =
-                raw_rot * 10.0f;
-        }
-        else {
-            rot =
-                raw_rot * 10.0f;
-        }
+    if (y < -0.05f)
+    {
+        rot = -rot;
     }
 
     if (
-        fabs(x) > 0.01f ||
-        fabs(y) > 0.01f ||
-        fabs(rot) > 0.01f
+        fabs(x) > 0.05f ||
+        fabs(y) > 0.05f ||
+        fabs(rot) > 0.05f
     )
     {
-        robotClient.setMotion(
-            x,
-            y,
-            rot
-        );
-
+        robotClient.setMotion(x, y, rot);
         isMoving = true;
     }
     else if (isMoving)
     {
-        robotClient.setMotion(
-            0.0f,
-            0.0f,
-            0.0f
-        );
-
+        robotClient.setMotion(0.0f, 0.0f, 0.0f);
         isMoving = false;
     }
 
-    float heightInput =
-        readJoystick(
-            HEIGHT_JOY_Y_PIN,
-            false
-        );
+    float heightInput = readJoystick(HEIGHT_JOY_Y_PIN, false);
 
-    if (fabs(heightInput) > 0.1f) {
-        menu.adjustBodyHeight(
-            heightInput * 8.0f
-        );
+    if (fabs(heightInput) > 0.1f)
+    {
+        menu.adjustBodyHeight(heightInput * 8.0f);
     }
 }
 
 void connectStream()
 {
-    if (streamClient.connected()) {
+    if (
+        streamClient.connected()
+    )
+    {
         return;
     }
 
@@ -207,7 +207,9 @@ void connectStream()
             "Host: "
         );
 
-        streamClient.println(host);
+        streamClient.println(
+            host
+        );
 
         streamClient.println(
             "Connection: close"
@@ -219,15 +221,21 @@ void connectStream()
 
 void updateStream()
 {
-    if (!streamClient.connected()) {
+    if (
+        !streamClient.connected()
+    )
+    {
         return;
     }
 
-    static size_t jpg_pos = 0;
+    static size_t jpg_pos =
+        0;
 
-    static bool in_jpg = false;
+    static bool in_jpg =
+        false;
 
-    static uint8_t prev_byte = 0;
+    static uint8_t prev_byte =
+        0;
 
     while (
         streamClient.available() > 0
@@ -239,7 +247,10 @@ void updateStream()
                 sizeof(net_buf)
             );
 
-        if (bytesRead <= 0) {
+        if (
+            bytesRead <= 0
+        )
+        {
             break;
         }
 
@@ -258,7 +269,8 @@ void updateStream()
                 b == 0xD8
             )
             {
-                in_jpg = true;
+                in_jpg =
+                    true;
 
                 jpg_buffer[0] =
                     0xFF;
@@ -266,17 +278,21 @@ void updateStream()
                 jpg_buffer[1] =
                     0xD8;
 
-                jpg_pos = 2;
+                jpg_pos =
+                    2;
             }
-            else if (in_jpg)
+            else if (
+                in_jpg
+            )
             {
                 if (
                     jpg_pos <
                     MAX_JPG_SIZE
                 )
                 {
-                    jpg_buffer[jpg_pos++] =
-                        b;
+                    jpg_buffer[
+                        jpg_pos++
+                    ] = b;
                 }
 
                 if (
@@ -284,9 +300,13 @@ void updateStream()
                     b == 0xD9
                 )
                 {
-                    in_jpg = false;
+                    in_jpg =
+                        false;
 
-                    if (jpg_pos > 100) {
+                    if (
+                        jpg_pos > 100
+                    )
+                    {
                         TJpgDec.drawJpg(
                             0,
                             0,
@@ -295,20 +315,24 @@ void updateStream()
                         );
                     }
 
-                    jpg_pos = 0;
+                    jpg_pos =
+                        0;
 
                     break;
                 }
             }
 
-            prev_byte = b;
+            prev_byte =
+                b;
         }
     }
 }
 
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(
+        115200
+    );
 
     pinMode(
         17,
@@ -330,13 +354,19 @@ void setup()
         INPUT_PULLUP
     );
 
-    analogReadResolution(12);
+    analogReadResolution(
+        12
+    );
 
-    delay(1000);
+    delay(
+        1000
+    );
 
     tft.begin();
 
-    tft.setRotation(1);
+    tft.setRotation(
+        1
+    );
 
     tft.fillScreen(
         TFT_BLACK
@@ -354,7 +384,10 @@ void setup()
         2
     );
 
-    if (psramFound()) {
+    if (
+        psramFound()
+    )
+    {
         jpg_buffer =
             (uint8_t*)heap_caps_malloc(
                 MAX_JPG_SIZE,
@@ -362,20 +395,26 @@ void setup()
                 MALLOC_CAP_8BIT
             );
     }
-    else {
+    else
+    {
         jpg_buffer =
             (uint8_t*)malloc(
                 MAX_JPG_SIZE
             );
     }
 
-    TJpgDec.setJpgScale(1);
+
+    TJpgDec.setJpgScale(
+        1
+    );
 
     TJpgDec.setCallback(
         tft_output
     );
 
-    TJpgDec.setSwapBytes(true);
+    TJpgDec.setSwapBytes(
+        true
+    );
 
     WiFi.begin(
         ssid,
@@ -387,7 +426,9 @@ void setup()
         WL_CONNECTED
     )
     {
-        delay(200);
+        delay(
+            200
+        );
     }
 
     tft.fillScreen(
@@ -404,20 +445,48 @@ void setup()
 
 void loop()
 {
-    if (!jpg_buffer) {
+    if (
+        !jpg_buffer
+    )
+    {
         return;
     }
 
-    if (!menu.isActive()) {
+    if (
+        !menu.isActive()
+    )
+    {
         connectStream();
 
         updateStream();
     }
 
-    if (!robotClient.connected()) {
-        if (robotClient.connect()) {
+    if (
+        !robotClient.connected()
+    )
+    {
+        if (
+            robotClient.connect()
+        )
+        {
             robotClient.setBodyHeight(
                 menu.getBodyHeight()
+            );
+
+            robotClient.setStepLength(
+                80.0f
+            );
+
+            robotClient.setStepHeight(
+                40.0f
+            );
+
+            robotClient.setStepPeriod(
+                1.0f
+            );
+
+            robotClient.setGait(
+                RobotProtocol::GaitTypeWire::TRIPOD
             );
         }
     }
@@ -428,7 +497,8 @@ void loop()
     if (
         !menuActive &&
         robotClient.connected() &&
-        millis() - lastMotionSend >=
+        millis() -
+        lastMotionSend >=
         MOTION_INTERVAL
     )
     {
@@ -438,5 +508,8 @@ void loop()
         updateRobotControl();
     }
 
-    delay(1);
+
+    delay(
+        1
+    );
 }

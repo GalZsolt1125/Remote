@@ -10,7 +10,10 @@ class RobotClient
 public:
     RobotClient();
 
-    void begin(const char* host, uint16_t port);
+    void begin(
+        const char* host,
+        uint16_t port
+    );
 
     bool connect();
 
@@ -22,19 +25,37 @@ public:
 
     void stop();
 
-    void setMotion(float x, float y, float rot);
+    void setMotion(
+        float x,
+        float y,
+        float rot
+    );
 
-    void setBodyHeight(float height);
+    void setBodyHeight(
+        float height
+    );
 
-    void setBodyOffset(float x, float y, float z);
+    void setBodyOffset(
+        float x,
+        float y,
+        float z
+    );
 
-    void setGait(RobotProtocol::GaitTypeWire gait);
+    void setGait(
+        RobotProtocol::GaitTypeWire gait
+    );
 
-    void setStepLength(float length);
+    void setStepLength(
+        float length
+    );
 
-    void setStepHeight(float height);
+    void setStepHeight(
+        float height
+    );
 
-    void setStepPeriod(float period);
+    void setStepPeriod(
+        float period
+    );
 
 private:
     void sendPacket(
@@ -47,6 +68,7 @@ private:
 
     const char* host;
     uint16_t port;
+
     uint8_t txSequence;
 };
 
