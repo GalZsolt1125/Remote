@@ -17,10 +17,10 @@ Menu::Menu(
       selectedBodyItem(BodyItem::BODY_HEIGHT),
       selectedGaitItem(GaitItem::GAIT_TYPE),
       selectedGaitType(GaitTypeItem::TRIPOD),
-      bodyHeight(-20.0f),
-      stepLength(80.0f),
-      stepHeight(40.0f),
-      stepPeriod(1.0f),
+      bodyHeight(-40.0f),
+      stepLength(70.0f),
+      stepHeight(0.0f),
+      stepPeriod(0.8f),
       lastButton1State(HIGH),
       lastButton2State(HIGH),
       lastInputTime(0),
@@ -45,10 +45,10 @@ void Menu::begin()
     selectedGaitType =
         GaitTypeItem::TRIPOD;
 
-    bodyHeight = -20.0f;
-    stepLength = 80.0f;
-    stepHeight = 40.0f;
-    stepPeriod = 1.0f;
+    bodyHeight = -40.0f;
+    stepLength = 70.0f;
+    stepHeight = 60.0f;
+    stepPeriod = 0.8f;
 }
 
 bool Menu::isActive() const
